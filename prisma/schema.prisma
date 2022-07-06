@@ -6,11 +6,76 @@ generator client {
 }
 
 datasource db {
-    provider = "sqlite"
-    url      = "file:./db.sqlite"
-    // url      = env("DATABASE_URL")
+    provider = "mysql"
+    url      = env("DATABASE_URL")
 }
 
-model Example {
-    id String @id @default(cuid())
+model Venue {
+    id            String    @id @default(cuid())
+    apiFootballId Int
+    name          String
+    address       String
+    city          String
+    capacity      Int
+    surface       String
+    image         String
+    Team          Team[]
+    Fixture       Fixture[]
+}
+
+model Team {
+    id            String    @id @default(cuid())
+    apiFootballId Int
+    name          String
+    code          String
+    country       String
+    founded       Int
+    national      Boolean
+    logo          String
+    venue         Venue     @relation(fields: [venueId], references: [id])
+    venueId       String
+    HomeFixture   Fixture[] @relation("Home")
+    AwayFixture   Fixture[] @relation("Away")
+}
+
+model League {
+    id            String    @id @default(cuid())
+    apiFootballId Int
+    name          String
+    country       String
+    logo          String
+    flag          String
+    Fixture       Fixture[]
+}
+
+model Fixture {
+    id                 String @id @default(cuid())
+    apiFootballId      Int
+    referee            String
+    timezone           String
+    timestamp          Int
+    firstPeriod        Int
+    secondPeriod       Int
+    venue              Venue  @relation(fields: [venueId], references: [id])
+    venueId            String
+    statusLong         String
+    statusShort        String
+    elapsedTime        Int
+    league             League @relation(fields: [leagueId], references: [id])
+    leagueId           String
+    season             Int
+    homeTeam           Team   @relation(name: "Home", fields: [homeTeamId], references: [id])
+    homeTeamId         String
+    awayTeam           Team   @relation(name: "Away", fields: [awayTeamId], references: [id])
+    awayTeamId         String
+    goalsHome          Int
+    goalsAway          Int
+    scoreHalfTimeHome  Int
+    scoreHalfTimeAway  Int
+    scoreFullTimeHome  Int
+    scoreFullTimeAway  Int
+    scoreExtraTimeHome Int
+    scoreExtraTimeAway Int
+    scorePenaltyHome   Int
+    scorePenaltyAway   Int
 }
