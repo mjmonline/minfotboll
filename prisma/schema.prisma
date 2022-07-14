@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Venue {
-    id            String    @id @default(cuid())
+    id            Int       @id @default(autoincrement())
     apiFootballId Int
     name          String
     address       String
@@ -24,7 +24,7 @@ model Venue {
 }
 
 model Team {
-    id            String    @id @default(cuid())
+    id            Int       @id @default(autoincrement())
     apiFootballId Int
     name          String
     code          String
@@ -33,13 +33,13 @@ model Team {
     national      Boolean
     logo          String
     venue         Venue     @relation(fields: [venueId], references: [id])
-    venueId       String
+    venueId       Int
     HomeFixture   Fixture[] @relation("Home")
     AwayFixture   Fixture[] @relation("Away")
 }
 
 model League {
-    id            String    @id @default(cuid())
+    id            Int       @id @default(autoincrement())
     apiFootballId Int
     name          String
     country       String
@@ -57,17 +57,17 @@ model Fixture {
     firstPeriod        Int
     secondPeriod       Int
     venue              Venue  @relation(fields: [venueId], references: [id])
-    venueId            String
+    venueId            Int
     statusLong         String
     statusShort        String
     elapsedTime        Int
     league             League @relation(fields: [leagueId], references: [id])
-    leagueId           String
+    leagueId           Int
     season             Int
     homeTeam           Team   @relation(name: "Home", fields: [homeTeamId], references: [id])
-    homeTeamId         String
+    homeTeamId         Int
     awayTeam           Team   @relation(name: "Away", fields: [awayTeamId], references: [id])
-    awayTeamId         String
+    awayTeamId         Int
     goalsHome          Int
     goalsAway          Int
     scoreHalfTimeHome  Int
