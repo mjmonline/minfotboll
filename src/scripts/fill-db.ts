@@ -13,49 +13,48 @@ var config = env.API_FOOTBALL_TOKEN
     }
   : {};
 
-// async function getTeams() {
-//   try {
-//     const { data } = await axios.get(
-//       "https://v3.football.api-sports.io/teams?league=39&season=2022",
-//       config
-//     );
+async function getTeams() {
+  try {
+    const { data } = await axios.get(
+      "https://v3.football.api-sports.io/teams?league=39&season=2022",
+      config
+    );
 
-//     return data;
-//   } catch (err) {
-//     throw err;
-//   }
-// }
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
 
 const doBackfillTeams = async () => {
-  // const data = await getTeams();
-  const response: any = [];
+  const data = await getTeams();
   let uniqueVenueIds: string[] = [];
 
-  const { teams, venues } = response.reduce(
+  const { teams, venues } = data.response.reduce(
     (acc: any, cur: any, i: number) => {
-      const isDuplicate = uniqueVenueIds.includes(cur.venue.id);
+      const isDuplicateVenue = uniqueVenueIds.includes(cur.venue.id);
 
-      if (!isDuplicate) {
+      if (!isDuplicateVenue) {
         uniqueVenueIds.push(cur.venue.id);
         acc.venues.push({
           id: i + 1,
-          apiFootballId: cur.venue.id,
+          apiFootballId: Number(cur.venue.id),
           name: cur.venue.name,
           address: cur.venue.address,
           city: cur.venue.city,
-          capacity: cur.venue.capacity,
-          surface: cur.venue.capacity,
+          capacity: Number(cur.venue.capacity),
+          surface: cur.venue.surface,
           image: cur.venue.image,
         });
       }
 
       acc.teams.push({
         id: i + 1,
-        apiFootballId: cur.team.id,
+        apiFootballId: Number(cur.team.id),
         name: cur.team.name,
         code: cur.team.code,
         country: cur.team.country,
-        founded: cur.team.founded,
+        founded: cur.team.founded.toString(),
         national: cur.team.national,
         logo: cur.team.logo,
         venueId: i + 1,
@@ -66,13 +65,12 @@ const doBackfillTeams = async () => {
     { teams: [], venues: [] }
   );
 
-  console.log(prisma);
+  // Save venue first because venueid is used in team table
+  const creationVenues = await prisma.venue.createMany({ data: venues });
+  const creationTeams = await prisma.team.createMany({ data: teams });
 
-  // const creationTeams = await prisma.team.createMany({ data: teams });
-  // const creationVenues = await prisma.venue.createMany({ data: venues });
-
-  // console.log("creationTeams?", creationTeams);
-  // console.log("creationVenues?", creationVenues);
+  console.log("creationTeams?", creationTeams);
+  console.log("creationVenues?", creationVenues);
 };
 
 // const doBackfillFixtures = async () => {
