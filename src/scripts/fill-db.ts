@@ -13,10 +13,10 @@ var config = env.API_FOOTBALL_TOKEN
     }
   : {};
 
-async function getTeams() {
+async function getTeams(season: number) {
   try {
     const { data } = await axios.get(
-      "https://v3.football.api-sports.io/teams?league=39&season=2022",
+      `https://v3.football.api-sports.io/teams?league=39&season=${season}`,
       config
     );
     return data;
@@ -25,10 +25,10 @@ async function getTeams() {
   }
 }
 
-async function getFixtures() {
+async function getFixtures(season: number) {
   try {
     const { data } = await axios.get(
-      "https://v3.football.api-sports.io/fixtures?league=39&season=2022",
+      `https://v3.football.api-sports.io/fixtures?league=39&season=${season}`,
       config
     );
     return data;
@@ -37,8 +37,20 @@ async function getFixtures() {
   }
 }
 
-const doBackfillTeams = async () => {
-  const data = await getTeams();
+async function getLeagues() {
+  try {
+    const { data } = await axios.get(
+      `https://v3.football.api-sports.io/leagues`,
+      config
+    );
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function doBackfillTeams(season: number) {
+  const data = await getTeams(season);
   let uniqueVenueIds: string[] = [];
 
   const { teams, venues } = data.response.reduce(
@@ -68,7 +80,9 @@ const doBackfillTeams = async () => {
         founded: cur.team.founded.toString(),
         national: cur.team.national,
         logo: cur.team.logo,
-        venueId: i + 1,
+        venueId: isDuplicateVenue
+          ? acc.venue.find((v: any) => v.id === cur.venue.id).id
+          : i + 1,
       });
 
       return acc;
@@ -82,10 +96,10 @@ const doBackfillTeams = async () => {
 
   console.log("creationTeams?", creationTeams);
   console.log("creationVenues?", creationVenues);
-};
+}
 
-const doBackfillFixtures = async () => {
-  const data = await getFixtures();
+const doBackfillFixtures = async (season: number) => {
+  const data = await getFixtures(season);
 
   const venues = await prisma.venue.findMany();
   const teams = await prisma.team.findMany();
@@ -118,7 +132,7 @@ const doBackfillFixtures = async () => {
 
       leagueId: x.league.id,
 
-      season: x.league.season,
+      season,
       homeTeamId,
       awayTeamId,
       goalsHome: x.goals.home,
@@ -139,5 +153,49 @@ const doBackfillFixtures = async () => {
   console.log(creation);
 };
 
-// doBackfillTeams();
-doBackfillFixtures();
+const doBackfillLeagues = async () => {
+  const data = await getLeagues();
+  let uniqueCountries: string[] = [];
+
+  const { leagues, countries } = data.response.reduce(
+    (acc: any, cur: any, i: number) => {
+      const isDuplicateCountry = uniqueCountries.includes(cur.country.name);
+
+      if (!isDuplicateCountry) {
+        uniqueCountries.push(cur.country.name);
+        acc.countries.push({
+          id: i + 1,
+          name: cur.country.name,
+          code: cur.country.code,
+          flag: cur.country.flag,
+        });
+      }
+
+      acc.leagues.push({
+        id: i + 1,
+        apiFootballId: Number(cur.league.id),
+        name: cur.league.name,
+        countryId: isDuplicateCountry
+          ? acc.countries.find((c: any) => c.name === cur.country.name).id
+          : i + 1,
+        type: cur.league.type,
+        logo: cur.league.logo,
+      });
+
+      return acc;
+    },
+    { leagues: [], countries: [] }
+  );
+
+  const leaguesCreation = await prisma.league.createMany({ data: leagues });
+  const countriesCreation = await prisma.country.createMany({
+    data: countries,
+  });
+
+  console.log(leaguesCreation);
+  console.log(countriesCreation);
+};
+
+// doBackfillLeagues();
+// doBackfillTeams(2022);
+// doBackfillFixtures(2022);

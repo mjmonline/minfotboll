@@ -40,13 +40,22 @@ model Team {
   AwayFixture   Fixture[] @relation("Away")
 }
 
+model Country {
+  id     Int      @id @default(autoincrement())
+  name   String
+  code   String?
+  flag   String?
+  League League[]
+}
+
 model League {
   id            Int       @id @default(autoincrement())
   apiFootballId Int
   name          String
-  country       String
+  country       Country   @relation(fields: [countryId], references: [id])
+  countryId     Int
+  type          String
   logo          String
-  flag          String
   Fixture       Fixture[]
 }
 
