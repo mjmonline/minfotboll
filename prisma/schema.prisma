@@ -51,33 +51,33 @@ model League {
 }
 
 model Fixture {
-  id                 String @id @default(cuid())
+  id                 Int     @id @default(autoincrement())
   apiFootballId      Int
-  referee            String
+  referee            String?
   timezone           String
   timestamp          Int
-  firstPeriod        Int
-  secondPeriod       Int
-  venue              Venue  @relation(fields: [venueId], references: [id])
+  firstPeriod        Int?
+  secondPeriod       Int?
+  venue              Venue   @relation(fields: [venueId], references: [id])
   venueId            Int
   statusLong         String
   statusShort        String
-  elapsedTime        Int
-  league             League @relation(fields: [leagueId], references: [id])
+  elapsedTime        Int?
+  league             League  @relation(fields: [leagueId], references: [id])
   leagueId           Int
   season             Int
-  homeTeam           Team   @relation(name: "Home", fields: [homeTeamId], references: [id])
+  homeTeam           Team    @relation(name: "Home", fields: [homeTeamId], references: [id])
   homeTeamId         Int
-  awayTeam           Team   @relation(name: "Away", fields: [awayTeamId], references: [id])
+  awayTeam           Team    @relation(name: "Away", fields: [awayTeamId], references: [id])
   awayTeamId         Int
-  goalsHome          Int
-  goalsAway          Int
-  scoreHalfTimeHome  Int
-  scoreHalfTimeAway  Int
-  scoreFullTimeHome  Int
-  scoreFullTimeAway  Int
-  scoreExtraTimeHome Int
-  scoreExtraTimeAway Int
-  scorePenaltyHome   Int
-  scorePenaltyAway   Int
+  goalsHome          Int?
+  goalsAway          Int?
+  scoreHalfTimeHome  Int?
+  scoreHalfTimeAway  Int?
+  scoreFullTimeHome  Int?
+  scoreFullTimeAway  Int?
+  scoreExtraTimeHome Int?
+  scoreExtraTimeAway Int?
+  scorePenaltyHome   Int?
+  scorePenaltyAway   Int?
 }

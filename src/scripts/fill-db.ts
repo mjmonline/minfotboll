@@ -19,7 +19,18 @@ async function getTeams() {
       "https://v3.football.api-sports.io/teams?league=39&season=2022",
       config
     );
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
 
+async function getFixtures() {
+  try {
+    const { data } = await axios.get(
+      "https://v3.football.api-sports.io/fixtures?league=39&season=2022",
+      config
+    );
     return data;
   } catch (err) {
     throw err;
@@ -73,19 +84,60 @@ const doBackfillTeams = async () => {
   console.log("creationVenues?", creationVenues);
 };
 
-// const doBackfillFixtures = async () => {
-//   try {
-//     const { data } = await axios.get(
-//       "https://v3.football.api-sports.io/fixtures?league=39&season=2022",
-//       config
-//     );
+const doBackfillFixtures = async () => {
+  const data = await getFixtures();
 
-//     const creation = await prisma.football.createMany({ data });
-//     console.log(data.response);
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
+  const venues = await prisma.venue.findMany();
+  const teams = await prisma.team.findMany();
 
-doBackfillTeams();
-// doBackfillFixtures();
+  console.log(JSON.stringify(data.response, null, 2));
+
+  const fixtures = data.response.map((x: any, i: number) => {
+    const venueId = venues.find(
+      (v: any) => v.apiFootballId === x.fixture.venue.id
+    )?.id;
+    const homeTeamId = teams.find(
+      (th: any) => th.apiFootballId === x.teams.home.id
+    )?.id;
+    const awayTeamId = teams.find(
+      (ta: any) => ta.apiFootballId === x.teams.away.id
+    )?.id;
+
+    return {
+      id: i + 1,
+      apiFootballId: x.fixture.id,
+      referee: x.fixture.referee,
+      timezone: x.fixture.timezone,
+      timestamp: x.fixture.timestamp,
+      firstPeriod: x.fixture.periods.first,
+      secondPeriod: x.fixture.periods.second,
+      venueId,
+      statusLong: x.fixture.status.long,
+      statusShort: x.fixture.status.short,
+      elapsedTime: x.fixture.status.elapsed,
+
+      leagueId: x.league.id,
+
+      season: x.league.season,
+      homeTeamId,
+      awayTeamId,
+      goalsHome: x.goals.home,
+      goalsAway: x.goals.away,
+      scoreHalfTimeHome: x.score.halftime.home,
+      scoreHalfTimeAway: x.score.halftime.away,
+      scoreFullTimeHome: x.score.fulltime.home,
+      scoreFullTimeAway: x.score.fulltime.away,
+      scoreExtraTimeHome: x.score.extratime.home,
+      scoreExtraTimeAway: x.score.extratime.away,
+      scorePenaltyHome: x.score.penalty.home,
+      scorePenaltyAway: x.score.penalty.away,
+    };
+  });
+
+  const creation = await prisma.fixture.createMany({ data: fixtures });
+
+  console.log(creation);
+};
+
+// doBackfillTeams();
+doBackfillFixtures();
