@@ -1,5 +1,5 @@
 import { prisma } from "../db/client";
-// import { z } from "zod";
+import { z } from "zod";
 
 import { createRouter } from "./context";
 
@@ -12,10 +12,12 @@ export const footballRouter = createRouter()
     },
   })
   .query("get-standings", {
-    input: (val: unknown) => {
-      if (typeof val === "number") return val;
-      throw new Error(`Invalid input: ${typeof val}`);
-    },
+    input: z
+      .number({
+        required_error: "Season is required",
+        invalid_type_error: "Season must be a number",
+      })
+      .min(1990),
     async resolve(req) {
       const standings = await prisma.standing.findMany({
         where: { season: req.input },
