@@ -1,19 +1,31 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Img from "next/image";
-import * as React from "react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
+import { useState } from "react";
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  SelectChangeEvent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 
 import { trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
-  const { data } = trpc.useQuery(["football.get-standings"]);
+  const [season, setSeason] = useState(2022);
+  const { data } = trpc.useQuery(["football.get-standings", season]);
+
+  const handleChange = (e: SelectChangeEvent<number>) => {
+    setSeason(Number(e.target.value));
+  };
 
   return (
     <>
@@ -26,8 +38,20 @@ const Home: NextPage = () => {
         <h1 className="font-extrabold text-center text-7xl">
           Create <span className="text-blue-500">T3</span> App
         </h1>
-
         <div className="w-fit">
+          <FormControl fullWidth>
+            <InputLabel id="demo-simple-select-label">Year</InputLabel>
+            <Select
+              labelId="demo-simple-select-label"
+              value={season}
+              label="year"
+              onChange={handleChange}
+            >
+              <MenuItem value={2022}>2022</MenuItem>
+              <MenuItem value={2021}>2021</MenuItem>
+              <MenuItem value={2020}>2020</MenuItem>
+            </Select>
+          </FormControl>
           {data && (
             <TableContainer component={Paper}>
               <Table sx={{ minWidth: 650 }} aria-label="simple table">

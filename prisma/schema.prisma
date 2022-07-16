@@ -34,8 +34,8 @@ model Team {
   founded       String
   national      Boolean
   logo          String
-  venue         Venue      @relation(fields: [venueId], references: [id])
-  venueId       Int
+  venue         Venue?     @relation(fields: [venueId], references: [id])
+  venueId       Int?
   HomeFixture   Fixture[]  @relation("Home")
   AwayFixture   Fixture[]  @relation("Away")
   Standing      Standing[]
@@ -68,8 +68,8 @@ model Fixture {
   timestamp          Int
   firstPeriod        Int?
   secondPeriod       Int?
-  venue              Venue   @relation(fields: [venueId], references: [id])
-  venueId            Int
+  venue              Venue?  @relation(fields: [venueId], references: [id])
+  venueId            Int?
   statusLong         String
   statusShort        String
   elapsedTime        Int?

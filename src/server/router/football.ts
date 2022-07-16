@@ -12,8 +12,13 @@ export const footballRouter = createRouter()
     },
   })
   .query("get-standings", {
-    async resolve() {
+    input: (val: unknown) => {
+      if (typeof val === "number") return val;
+      throw new Error(`Invalid input: ${typeof val}`);
+    },
+    async resolve(req) {
       const standings = await prisma.standing.findMany({
+        where: { season: req.input },
         orderBy: [{ rank: "asc" }],
       });
       const teams = await prisma.team.findMany();
