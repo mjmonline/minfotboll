@@ -26,7 +26,7 @@ model Venue {
 }
 
 model Team {
-  id            Int       @id @default(autoincrement())
+  id            Int        @id @default(autoincrement())
   apiFootballId Int
   name          String
   code          String
@@ -34,10 +34,11 @@ model Team {
   founded       String
   national      Boolean
   logo          String
-  venue         Venue     @relation(fields: [venueId], references: [id])
+  venue         Venue      @relation(fields: [venueId], references: [id])
   venueId       Int
-  HomeFixture   Fixture[] @relation("Home")
-  AwayFixture   Fixture[] @relation("Away")
+  HomeFixture   Fixture[]  @relation("Home")
+  AwayFixture   Fixture[]  @relation("Away")
+  Standing      Standing[]
 }
 
 model Country {
@@ -89,4 +90,26 @@ model Fixture {
   scoreExtraTimeAway Int?
   scorePenaltyHome   Int?
   scorePenaltyAway   Int?
+}
+
+model Standing {
+  id               Int      @id @default(autoincrement())
+  rank             Int
+  team             Team     @relation(fields: [teamId], references: [id])
+  teamId           Int
+  points           Int
+  goalsDiff        Int
+  playedHome       Int
+  winHome          Int
+  drawHome         Int
+  loseHome         Int
+  goalsForHome     Int
+  goalsAgainstHome Int
+  playedAway       Int
+  winAway          Int
+  drawAway         Int
+  loseAway         Int
+  goalsForAway     Int
+  goalsAgainstAway Int
+  update           DateTime
 }

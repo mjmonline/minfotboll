@@ -49,6 +49,18 @@ async function getLeagues() {
   }
 }
 
+async function getStandings(season: number) {
+  try {
+    const { data } = await axios.get(
+      `https://v3.football.api-sports.io/standings?league=39&season=${season}`,
+      config
+    );
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
 async function doBackfillTeams(season: number) {
   const data = await getTeams(season);
   let uniqueVenueIds: string[] = [];
@@ -103,8 +115,6 @@ const doBackfillFixtures = async (season: number) => {
 
   const venues = await prisma.venue.findMany();
   const teams = await prisma.team.findMany();
-
-  console.log(JSON.stringify(data.response, null, 2));
 
   const fixtures = data.response.map((x: any, i: number) => {
     const venueId = venues.find(
@@ -196,6 +206,50 @@ const doBackfillLeagues = async () => {
   console.log(countriesCreation);
 };
 
-// doBackfillLeagues();
-// doBackfillTeams(2022);
-// doBackfillFixtures(2022);
+const doBackfillStandings = async (season: number) => {
+  const data = await getStandings(season);
+
+  const teams = await prisma.team.findMany();
+
+  const standings = data.response[0].league.standings[0].map(
+    (x: any, i: number) => {
+      const teamId = teams.find((t: any) => {
+        return t.apiFootballId === x.team.id;
+      })?.id;
+
+      return {
+        id: i + 1,
+        rank: x.rank,
+        teamId,
+        points: x.points,
+        goalsDiff: x.goalsDiff,
+        playedHome: x.home.played,
+        winHome: x.home.win,
+        drawHome: x.home.draw,
+        loseHome: x.home.draw,
+        goalsForHome: x.home.goals.for,
+        goalsAgainstHome: x.home.goals.against,
+        playedAway: x.away.played,
+        winAway: x.away.win,
+        drawAway: x.away.draw,
+        loseAway: x.away.draw,
+        goalsForAway: x.away.goals.for,
+        goalsAgainstAway: x.away.goals.against,
+        update: x.update,
+      };
+    }
+  );
+
+  const creation = await prisma.standing.createMany({ data: standings });
+
+  console.log(creation);
+};
+
+async function doBackfill() {
+  await doBackfillLeagues();
+  await doBackfillTeams(2022);
+  await doBackfillFixtures(2022);
+  await doBackfillStandings(2022);
+}
+
+doBackfill();
