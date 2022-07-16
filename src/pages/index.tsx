@@ -34,7 +34,7 @@ const Home: NextPage = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Position</TableCell>
-                    <TableCell>Club</TableCell>
+                    <TableCell className="whitespace-nowrap">Club</TableCell>
                     <TableCell align="right">Played</TableCell>
                     <TableCell align="right">Won</TableCell>
                     <TableCell align="right">Drawn</TableCell>
@@ -46,7 +46,7 @@ const Home: NextPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {data.map((t, i) => (
+                  {data.map((t) => (
                     <TableRow
                       key={t.team.name}
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
@@ -54,7 +54,21 @@ const Home: NextPage = () => {
                       <TableCell component="th" scope="row">
                         {t.rank}
                       </TableCell>
-                      <TableCell>{t.team.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <div className="mr-4 shrink-0">
+                            {t.team.logo && (
+                              <Img
+                                src={t.team.logo}
+                                width={32}
+                                height={32}
+                                alt={t.team.name}
+                              />
+                            )}
+                          </div>
+                          {t.team.name}
+                        </div>
+                      </TableCell>
                       <TableCell align="right">{t.all.played}</TableCell>
                       <TableCell align="right">{t.all.win}</TableCell>
                       <TableCell align="right">{t.all.draw}</TableCell>

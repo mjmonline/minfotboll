@@ -16,10 +16,10 @@ model Venue {
   id            Int       @id @default(autoincrement())
   apiFootballId Int
   name          String
-  address       String
-  city          String
+  address       String?
+  city          String?
   capacity      Int
-  surface       String
+  surface       String?
   image         String
   Team          Team[]
   Fixture       Fixture[]
@@ -112,4 +112,5 @@ model Standing {
   goalsForAway     Int
   goalsAgainstAway Int
   update           DateTime
+  season           Int
 }

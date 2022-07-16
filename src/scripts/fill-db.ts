@@ -61,53 +61,52 @@ async function getStandings(season: number) {
   }
 }
 
+async function getCountries() {
+  try {
+    const { data } = await axios.get(
+      `https://v3.football.api-sports.io/countries`,
+      config
+    );
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function getVenues(country: string) {
+  try {
+    const { data } = await axios.get(
+      `https://v3.football.api-sports.io/venues?country=${country}`,
+      config
+    );
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
 async function doBackfillTeams(season: number) {
   const data = await getTeams(season);
-  let uniqueVenueIds: string[] = [];
+  const venues = await prisma.venue.findMany();
 
-  const { teams, venues } = data.response.reduce(
-    (acc: any, cur: any, i: number) => {
-      const isDuplicateVenue = uniqueVenueIds.includes(cur.venue.id);
+  const teams = data.response.map((t: any) => {
+    const venueId = venues.find((v) => v.apiFootballId === t.venue.id)?.id;
 
-      if (!isDuplicateVenue) {
-        uniqueVenueIds.push(cur.venue.id);
-        acc.venues.push({
-          id: i + 1,
-          apiFootballId: Number(cur.venue.id),
-          name: cur.venue.name,
-          address: cur.venue.address,
-          city: cur.venue.city,
-          capacity: Number(cur.venue.capacity),
-          surface: cur.venue.surface,
-          image: cur.venue.image,
-        });
-      }
+    return {
+      apiFootballId: Number(t.team.id),
+      name: t.team.name,
+      code: t.team.code,
+      country: t.team.country,
+      founded: t.team.founded.toString(),
+      national: t.team.national,
+      logo: t.team.logo,
+      venueId,
+    };
+  });
 
-      acc.teams.push({
-        id: i + 1,
-        apiFootballId: Number(cur.team.id),
-        name: cur.team.name,
-        code: cur.team.code,
-        country: cur.team.country,
-        founded: cur.team.founded.toString(),
-        national: cur.team.national,
-        logo: cur.team.logo,
-        venueId: isDuplicateVenue
-          ? acc.venue.find((v: any) => v.id === cur.venue.id).id
-          : i + 1,
-      });
+  const creation = await prisma.team.createMany({ data: teams });
 
-      return acc;
-    },
-    { teams: [], venues: [] }
-  );
-
-  // Save venue first because venueid is used in team table
-  const creationVenues = await prisma.venue.createMany({ data: venues });
-  const creationTeams = await prisma.team.createMany({ data: teams });
-
-  console.log("creationTeams?", creationTeams);
-  console.log("creationVenues?", creationVenues);
+  console.log(creation);
 }
 
 const doBackfillFixtures = async (season: number) => {
@@ -128,7 +127,6 @@ const doBackfillFixtures = async (season: number) => {
     )?.id;
 
     return {
-      id: i + 1,
       apiFootballId: x.fixture.id,
       referee: x.fixture.referee,
       timezone: x.fixture.timezone,
@@ -163,47 +161,61 @@ const doBackfillFixtures = async (season: number) => {
   console.log(creation);
 };
 
-const doBackfillLeagues = async () => {
-  const data = await getLeagues();
-  let uniqueCountries: string[] = [];
+const doBackfillCountries = async () => {
+  const data = await getCountries();
 
-  const { leagues, countries } = data.response.reduce(
-    (acc: any, cur: any, i: number) => {
-      const isDuplicateCountry = uniqueCountries.includes(cur.country.name);
-
-      if (!isDuplicateCountry) {
-        uniqueCountries.push(cur.country.name);
-        acc.countries.push({
-          id: i + 1,
-          name: cur.country.name,
-          code: cur.country.code,
-          flag: cur.country.flag,
-        });
-      }
-
-      acc.leagues.push({
-        id: i + 1,
-        apiFootballId: Number(cur.league.id),
-        name: cur.league.name,
-        countryId: isDuplicateCountry
-          ? acc.countries.find((c: any) => c.name === cur.country.name).id
-          : i + 1,
-        type: cur.league.type,
-        logo: cur.league.logo,
-      });
-
-      return acc;
-    },
-    { leagues: [], countries: [] }
-  );
-
-  const leaguesCreation = await prisma.league.createMany({ data: leagues });
-  const countriesCreation = await prisma.country.createMany({
-    data: countries,
+  const countries = data.response.map((c: any) => {
+    return {
+      name: c.name,
+      code: c.code,
+      flag: c.flag,
+    };
   });
 
-  console.log(leaguesCreation);
-  console.log(countriesCreation);
+  const creation = await prisma.country.createMany({ data: countries });
+
+  console.log(creation);
+};
+
+const doBackfillVenues = async (country: string) => {
+  const data = await getVenues(country);
+
+  const venues = data.response.map((v: any) => {
+    return {
+      apiFootballId: Number(v.id),
+      name: v.name,
+      address: v.address,
+      city: v.city,
+      capacity: Number(v.capacity),
+      surface: v.surface,
+      image: v.image,
+    };
+  });
+
+  const creation = await prisma.venue.createMany({ data: venues });
+
+  console.log(creation);
+};
+
+const doBackfillLeagues = async () => {
+  const data = await getLeagues();
+  const countries = await prisma.country.findMany();
+
+  const leagues = data.response.map((l: any) => {
+    const countryId = countries.find((c) => c.name === l.country.name)?.id;
+
+    return {
+      apiFootballId: Number(l.league.id),
+      name: l.league.name,
+      countryId,
+      type: l.league.type,
+      logo: l.league.logo,
+    };
+  });
+
+  const creation = await prisma.league.createMany({ data: leagues });
+
+  console.log(creation);
 };
 
 const doBackfillStandings = async (season: number) => {
@@ -218,7 +230,6 @@ const doBackfillStandings = async (season: number) => {
       })?.id;
 
       return {
-        id: i + 1,
         rank: x.rank,
         teamId,
         points: x.points,
@@ -236,6 +247,7 @@ const doBackfillStandings = async (season: number) => {
         goalsForAway: x.away.goals.for,
         goalsAgainstAway: x.away.goals.against,
         update: x.update,
+        season,
       };
     }
   );
@@ -246,10 +258,12 @@ const doBackfillStandings = async (season: number) => {
 };
 
 async function doBackfill() {
+  await doBackfillCountries();
+  await doBackfillVenues("england");
   await doBackfillLeagues();
-  await doBackfillTeams(2022);
-  await doBackfillFixtures(2022);
-  await doBackfillStandings(2022);
+  await doBackfillTeams(2021);
+  await doBackfillFixtures(2021);
+  await doBackfillStandings(2021);
 }
 
 doBackfill();
