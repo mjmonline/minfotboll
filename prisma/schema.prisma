@@ -76,9 +76,9 @@ model Fixture {
   league             League  @relation(fields: [leagueId], references: [id])
   leagueId           Int
   season             Int
-  homeTeam           Team    @relation(name: "Home", fields: [homeTeamId], references: [id])
+  homeTeam           Team    @relation("Home", fields: [homeTeamId], references: [id])
   homeTeamId         Int
-  awayTeam           Team    @relation(name: "Away", fields: [awayTeamId], references: [id])
+  awayTeam           Team    @relation("Away", fields: [awayTeamId], references: [id])
   awayTeamId         Int
   goalsHome          Int?
   goalsAway          Int?
