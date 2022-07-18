@@ -258,12 +258,12 @@ const doBackfillStandings = async (season: number) => {
 };
 
 async function doBackfill() {
-  await doBackfillCountries();
-  await doBackfillVenues("england");
-  await doBackfillLeagues();
-  await doBackfillTeams(2021);
-  await doBackfillFixtures(2021);
-  await doBackfillStandings(2021);
+  // await doBackfillCountries();
+  // await doBackfillVenues("england");
+  // await doBackfillLeagues();
+  // await doBackfillTeams(2014);
+  // await doBackfillFixtures(2014);
+  // await doBackfillStandings(2014);
 }
 
 doBackfill();
