@@ -20,8 +20,9 @@ import {
 import { trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
-  const [season, setSeason] = useState(2022);
+  const [season, setSeason] = useState(new Date().getFullYear());
   const { data } = trpc.useQuery(["football.get-standings", season]);
+  const { data: seasonsData } = trpc.useQuery(["football.get-seasons"]);
 
   const handleChange = (e: SelectChangeEvent<number>) => {
     setSeason(Number(e.target.value));
@@ -39,73 +40,81 @@ const Home: NextPage = () => {
           Create <span className="text-blue-500">T3</span> App
         </h1>
         <div className="w-fit">
-          <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Year</InputLabel>
-            <Select
-              labelId="demo-simple-select-label"
-              value={season}
-              label="year"
-              onChange={handleChange}
-            >
-              <MenuItem value={2022}>2022</MenuItem>
-              <MenuItem value={2021}>2021</MenuItem>
-              <MenuItem value={2020}>2020</MenuItem>
-            </Select>
-          </FormControl>
-          {data && (
-            <TableContainer component={Paper}>
-              <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Position</TableCell>
-                    <TableCell className="whitespace-nowrap">Club</TableCell>
-                    <TableCell align="right">Played</TableCell>
-                    <TableCell align="right">Won</TableCell>
-                    <TableCell align="right">Drawn</TableCell>
-                    <TableCell align="right">Lost</TableCell>
-                    <TableCell align="right">GF</TableCell>
-                    <TableCell align="right">GA</TableCell>
-                    <TableCell align="right">GD</TableCell>
-                    <TableCell align="right">Points</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {data.map((t) => (
-                    <TableRow
-                      key={t.team.name}
-                      sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                    >
-                      <TableCell component="th" scope="row">
-                        {t.rank}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <div className="mr-4 shrink-0">
-                            {t.team.logo && (
-                              <Img
-                                src={t.team.logo}
-                                width={32}
-                                height={32}
-                                alt={t.team.name}
-                              />
-                            )}
-                          </div>
-                          {t.team.name}
-                        </div>
-                      </TableCell>
-                      <TableCell align="right">{t.all.played}</TableCell>
-                      <TableCell align="right">{t.all.win}</TableCell>
-                      <TableCell align="right">{t.all.draw}</TableCell>
-                      <TableCell align="right">{t.all.lose}</TableCell>
-                      <TableCell align="right">{t.all.goals.for}</TableCell>
-                      <TableCell align="right">{t.all.goals.against}</TableCell>
-                      <TableCell align="right">{t.goalsDiff}</TableCell>
-                      <TableCell align="right">{t.points}</TableCell>
-                    </TableRow>
+          {data && seasonsData && (
+            <>
+              <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Year</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  value={season}
+                  label="year"
+                  onChange={handleChange}
+                >
+                  {seasonsData.map((season) => (
+                    <MenuItem key={`season-${season}`} value={season}>
+                      {season}
+                    </MenuItem>
                   ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                </Select>
+              </FormControl>
+              <TableContainer component={Paper}>
+                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Position</TableCell>
+                      <TableCell className="whitespace-nowrap">Club</TableCell>
+                      <TableCell align="right">Played</TableCell>
+                      <TableCell align="right">Won</TableCell>
+                      <TableCell align="right">Drawn</TableCell>
+                      <TableCell align="right">Lost</TableCell>
+                      <TableCell align="right">GF</TableCell>
+                      <TableCell align="right">GA</TableCell>
+                      <TableCell align="right">GD</TableCell>
+                      <TableCell align="right">Points</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.map((t) => (
+                      <TableRow
+                        key={`team-${t.team.name}-${t.season}`}
+                        sx={{
+                          "&:last-child td, &:last-child th": { border: 0 },
+                        }}
+                      >
+                        <TableCell component="th" scope="row">
+                          {t.rank}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <div className="mr-4 shrink-0">
+                              {t.team.logo && (
+                                <Img
+                                  src={t.team.logo}
+                                  width={32}
+                                  height={32}
+                                  alt={t.team.name}
+                                />
+                              )}
+                            </div>
+                            {t.team.name}
+                          </div>
+                        </TableCell>
+                        <TableCell align="right">{t.all.played}</TableCell>
+                        <TableCell align="right">{t.all.win}</TableCell>
+                        <TableCell align="right">{t.all.draw}</TableCell>
+                        <TableCell align="right">{t.all.lose}</TableCell>
+                        <TableCell align="right">{t.all.goals.for}</TableCell>
+                        <TableCell align="right">
+                          {t.all.goals.against}
+                        </TableCell>
+                        <TableCell align="right">{t.goalsDiff}</TableCell>
+                        <TableCell align="right">{t.points}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
           )}
         </div>
       </div>

@@ -14,7 +14,7 @@ datasource db {
 
 model Venue {
   id            Int       @id @default(autoincrement())
-  apiFootballId Int
+  apiFootballId Int       @unique
   name          String
   address       String?
   city          String?
@@ -27,13 +27,16 @@ model Venue {
 
 model Team {
   id            Int        @id @default(autoincrement())
-  apiFootballId Int
+  apiFootballId Int        @unique
   name          String
   code          String
-  country       String
   founded       String
   national      Boolean
   logo          String
+  country       Country    @relation(fields: [countryName], references: [name])
+  countryName   String
+  league        League     @relation(fields: [leagueId], references: [id])
+  leagueId      Int
   venue         Venue?     @relation(fields: [venueId], references: [id])
   venueId       Int?
   HomeFixture   Fixture[]  @relation("Home")
@@ -42,27 +45,30 @@ model Team {
 }
 
 model Country {
-  id     Int      @id @default(autoincrement())
-  name   String
+  name   String   @id
   code   String?
   flag   String?
   League League[]
+  Team   Team[]
 }
 
 model League {
-  id            Int       @id @default(autoincrement())
-  apiFootballId Int
+  id            Int        @id @default(autoincrement())
+  apiFootballId Int        @unique
   name          String
-  country       Country   @relation(fields: [countryId], references: [id])
-  countryId     Int
+  country       Country    @relation(fields: [countryName], references: [name])
+  countryName   String
   type          String
   logo          String
   Fixture       Fixture[]
+  Season        Season[]
+  Standing      Standing[]
+  Team          Team[]
 }
 
 model Fixture {
   id                 Int     @id @default(autoincrement())
-  apiFootballId      Int
+  apiFootballId      Int     @unique
   referee            String?
   timezone           String
   timestamp          Int
@@ -75,7 +81,8 @@ model Fixture {
   elapsedTime        Int?
   league             League  @relation(fields: [leagueId], references: [id])
   leagueId           Int
-  season             Int
+  season             Season  @relation(fields: [seasonId], references: [id])
+  seasonId           Int
   homeTeam           Team    @relation("Home", fields: [homeTeamId], references: [id])
   homeTeamId         Int
   awayTeam           Team    @relation("Away", fields: [awayTeamId], references: [id])
@@ -112,5 +119,19 @@ model Standing {
   goalsForAway     Int
   goalsAgainstAway Int
   update           DateTime
-  season           Int
+  league           League   @relation(fields: [leagueId], references: [id])
+  leagueId         Int
+  season           Season   @relation(fields: [seasonId], references: [id])
+  seasonId         Int      @unique
+}
+
+model Season {
+  id       Int       @id @default(autoincrement())
+  year     Int
+  start    String
+  end      String
+  league   League    @relation(fields: [leagueId], references: [id])
+  leagueId Int
+  standing Standing?
+  Fixture  Fixture[]
 }

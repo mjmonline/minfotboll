@@ -13,10 +13,10 @@ var config = env.API_FOOTBALL_TOKEN
     }
   : {};
 
-async function getTeams(season: number) {
+async function getTeams(league: number, season: number) {
   try {
     const { data } = await axios.get(
-      `https://v3.football.api-sports.io/teams?league=39&season=${season}`,
+      `https://v3.football.api-sports.io/teams?${league}&season=${season}`,
       config
     );
     return data;
@@ -85,9 +85,16 @@ async function getVenues(country: string) {
   }
 }
 
-async function doBackfillTeams(season: number) {
-  const data = await getTeams(season);
+async function doBackfillTeams(
+  apiFootballLeagueId: number,
+  seasonYear: number
+) {
+  const data = await getTeams(apiFootballLeagueId, seasonYear);
   const venues = await prisma.venue.findMany();
+  const league = await prisma.league.findFirst({
+    where: { apiFootballId: apiFootballLeagueId },
+  });
+  const leagueId = league?.id;
 
   const teams = data.response.map((t: any) => {
     const venueId = venues.find((v) => v.apiFootballId === t.venue.id)?.id;
@@ -96,10 +103,11 @@ async function doBackfillTeams(season: number) {
       apiFootballId: Number(t.team.id),
       name: t.team.name,
       code: t.team.code,
-      country: t.team.country,
+      countryName: t.team.country,
       founded: t.team.founded.toString(),
       national: t.team.national,
       logo: t.team.logo,
+      leagueId,
       venueId,
     };
   });
@@ -109,11 +117,21 @@ async function doBackfillTeams(season: number) {
   console.log(creation);
 }
 
-const doBackfillFixtures = async (season: number) => {
-  const data = await getFixtures(season);
-
+const doBackfillFixtures = async (
+  apiFootballLeagueId: number,
+  seasonYear: number
+) => {
+  const data = await getFixtures(seasonYear);
   const venues = await prisma.venue.findMany();
   const teams = await prisma.team.findMany();
+  const league = await prisma.league.findFirst({
+    where: { apiFootballId: apiFootballLeagueId },
+  });
+  const leagueId = league?.id;
+  const season = await prisma.season.findFirst({
+    where: { year: seasonYear, leagueId },
+  });
+  const seasonId = season?.id;
 
   const fixtures = data.response.map((x: any, i: number) => {
     const venueId = venues.find(
@@ -137,10 +155,8 @@ const doBackfillFixtures = async (season: number) => {
       statusLong: x.fixture.status.long,
       statusShort: x.fixture.status.short,
       elapsedTime: x.fixture.status.elapsed,
-
-      leagueId: x.league.id,
-
-      season,
+      leagueId,
+      seasonId,
       homeTeamId,
       awayTeamId,
       goalsHome: x.goals.home,
@@ -202,14 +218,14 @@ const doBackfillLeagues = async () => {
   const countries = await prisma.country.findMany();
 
   const leagues = data.response.map((l: any) => {
-    const countryId = countries.find((c) => c.name === l.country.name)?.id;
+    const countryName = countries.find((c) => c.name === l.country.name)?.name;
 
     return {
       apiFootballId: Number(l.league.id),
       name: l.league.name,
-      countryId,
       type: l.league.type,
       logo: l.league.logo,
+      countryName,
     };
   });
 
@@ -218,10 +234,20 @@ const doBackfillLeagues = async () => {
   console.log(creation);
 };
 
-const doBackfillStandings = async (season: number) => {
-  const data = await getStandings(season);
-
+const doBackfillStandings = async (
+  apiFootballLeagueId: number,
+  seasonYear: number
+) => {
+  const data = await getStandings(seasonYear);
   const teams = await prisma.team.findMany();
+  const league = await prisma.league.findFirst({
+    where: { apiFootballId: apiFootballLeagueId },
+  });
+  const leagueId = league?.id;
+  const season = await prisma.season.findFirst({
+    where: { year: seasonYear, leagueId },
+  });
+  const seasonId = season?.id;
 
   const standings = data.response[0].league.standings[0].map(
     (x: any, i: number) => {
@@ -247,7 +273,7 @@ const doBackfillStandings = async (season: number) => {
         goalsForAway: x.away.goals.for,
         goalsAgainstAway: x.away.goals.against,
         update: x.update,
-        season,
+        seasonId,
       };
     }
   );
@@ -258,6 +284,7 @@ const doBackfillStandings = async (season: number) => {
 };
 
 async function doBackfill() {
+  const apiFootballLeagueId = 39;
   const thisYear = new Date().getFullYear();
   const startYear = thisYear - 1;
 
@@ -266,9 +293,9 @@ async function doBackfill() {
   await doBackfillLeagues();
 
   for (let i = startYear; i <= thisYear; i++) {
-    await doBackfillTeams(i);
-    await doBackfillFixtures(i);
-    await doBackfillStandings(i);
+    await doBackfillTeams(apiFootballLeagueId, i);
+    await doBackfillFixtures(apiFootballLeagueId, i);
+    await doBackfillStandings(apiFootballLeagueId, i);
   }
 }
 
