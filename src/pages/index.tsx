@@ -51,8 +51,8 @@ const Home: NextPage = () => {
                   onChange={handleChange}
                 >
                   {seasonsData.map((season) => (
-                    <MenuItem key={`season-${season}`} value={season}>
-                      {season}
+                    <MenuItem key={`season-${season.year}`} value={season.year}>
+                      {season.year}
                     </MenuItem>
                   ))}
                 </Select>
@@ -76,7 +76,7 @@ const Home: NextPage = () => {
                   <TableBody>
                     {data.map((t) => (
                       <TableRow
-                        key={`team-${t.team.name}-${t.season}`}
+                        key={`team-${t.team.name}-${season}`}
                         sx={{
                           "&:last-child td, &:last-child th": { border: 0 },
                         }}

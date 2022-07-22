@@ -20,7 +20,7 @@ export const footballRouter = createRouter()
       .min(1990),
     async resolve(req) {
       const standings = await prisma.standing.findMany({
-        where: { season: req.input },
+        where: { season: { year: req.input } },
         orderBy: [{ rank: "asc" }],
       });
       const teams = await prisma.team.findMany();
@@ -71,5 +71,15 @@ export const footballRouter = createRouter()
       });
 
       return formattedStandings;
+    },
+  })
+  .query("get-seasons", {
+    async resolve() {
+      const seasons = await prisma.season.findMany({
+        where: { league: { apiFootballId: 39 } },
+        orderBy: [{ year: "asc" }],
+      });
+
+      return seasons;
     },
   });
