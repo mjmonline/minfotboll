@@ -19,6 +19,12 @@ import {
 
 import { trpc } from "../utils/trpc";
 
+function getSeasonSpan(start: number, end: string) {
+  const endYear = new Date(end).getFullYear().toString().slice(-2);
+
+  return `${start}/${endYear}`;
+}
+
 const Home: NextPage = () => {
   const [season, setSeason] = useState(new Date().getFullYear());
   const { data } = trpc.useQuery(["football.get-standings", season]);
@@ -43,18 +49,24 @@ const Home: NextPage = () => {
           {data && seasonsData && (
             <>
               <FormControl fullWidth>
-                <InputLabel id="demo-simple-select-label">Year</InputLabel>
+                <InputLabel id="demo-simple-select-label">Season</InputLabel>
                 <Select
                   labelId="demo-simple-select-label"
                   value={season}
-                  label="year"
+                  label="Season"
                   onChange={handleChange}
                 >
-                  {seasonsData.map((season) => (
-                    <MenuItem key={`season-${season.year}`} value={season.year}>
-                      {season.year}
-                    </MenuItem>
-                  ))}
+                  {seasonsData.map((season) => {
+                    const seasonSpan = getSeasonSpan(season.year, season.end);
+                    return (
+                      <MenuItem
+                        key={`season-${season.year}`}
+                        value={season.year}
+                      >
+                        {seasonSpan}
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </FormControl>
               <TableContainer component={Paper}>
@@ -70,7 +82,9 @@ const Home: NextPage = () => {
                       <TableCell align="right">GF</TableCell>
                       <TableCell align="right">GA</TableCell>
                       <TableCell align="right">GD</TableCell>
-                      <TableCell align="right">Points</TableCell>
+                      <TableCell align="right">
+                        <b>Points</b>
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -108,7 +122,9 @@ const Home: NextPage = () => {
                           {t.all.goals.against}
                         </TableCell>
                         <TableCell align="right">{t.goalsDiff}</TableCell>
-                        <TableCell align="right">{t.points}</TableCell>
+                        <TableCell align="right">
+                          <b>{t.points}</b>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
