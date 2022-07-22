@@ -14,7 +14,7 @@ datasource db {
 
 model Venue {
   id            Int       @id @default(autoincrement())
-  apiFootballId Int       @unique
+  apiFootballId Int
   name          String
   address       String?
   city          String?
@@ -27,7 +27,7 @@ model Venue {
 
 model Team {
   id            Int        @id @default(autoincrement())
-  apiFootballId Int        @unique
+  apiFootballId Int
   name          String
   code          String
   founded       String
@@ -54,7 +54,7 @@ model Country {
 
 model League {
   id            Int        @id @default(autoincrement())
-  apiFootballId Int        @unique
+  apiFootballId Int
   name          String
   country       Country    @relation(fields: [countryName], references: [name])
   countryName   String
@@ -68,7 +68,7 @@ model League {
 
 model Fixture {
   id                 Int     @id @default(autoincrement())
-  apiFootballId      Int     @unique
+  apiFootballId      Int
   referee            String?
   timezone           String
   timestamp          Int
@@ -122,16 +122,16 @@ model Standing {
   league           League   @relation(fields: [leagueId], references: [id])
   leagueId         Int
   season           Season   @relation(fields: [seasonId], references: [id])
-  seasonId         Int      @unique
+  seasonId         Int
 }
 
 model Season {
-  id       Int       @id @default(autoincrement())
+  id       Int        @id @default(autoincrement())
   year     Int
   start    String
   end      String
-  league   League    @relation(fields: [leagueId], references: [id])
+  league   League     @relation(fields: [leagueId], references: [id])
   leagueId Int
-  standing Standing?
+  standing Standing[]
   Fixture  Fixture[]
 }

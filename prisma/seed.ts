@@ -16,7 +16,7 @@ var config = env.API_FOOTBALL_TOKEN
 async function getTeams(league: number, season: number) {
   try {
     const { data } = await axios.get(
-      `https://v3.football.api-sports.io/teams?${league}&season=${season}`,
+      `https://v3.football.api-sports.io/teams?league=${league}&season=${season}`,
       config
     );
     return data;
@@ -25,10 +25,10 @@ async function getTeams(league: number, season: number) {
   }
 }
 
-async function getFixtures(season: number) {
+async function getFixtures(league: number, season: number) {
   try {
     const { data } = await axios.get(
-      `https://v3.football.api-sports.io/fixtures?league=39&season=${season}`,
+      `https://v3.football.api-sports.io/fixtures?league=${league}&season=${season}`,
       config
     );
     return data;
@@ -49,10 +49,10 @@ async function getLeagues() {
   }
 }
 
-async function getStandings(season: number) {
+async function getStandings(league: number, season: number) {
   try {
     const { data } = await axios.get(
-      `https://v3.football.api-sports.io/standings?league=39&season=${season}`,
+      `https://v3.football.api-sports.io/standings?league=${league}&season=${season}`,
       config
     );
     return data;
@@ -121,7 +121,7 @@ const doBackfillFixtures = async (
   apiFootballLeagueId: number,
   seasonYear: number
 ) => {
-  const data = await getFixtures(seasonYear);
+  const data = await getFixtures(apiFootballLeagueId, seasonYear);
   const venues = await prisma.venue.findMany();
   const teams = await prisma.team.findMany();
   const league = await prisma.league.findFirst({
@@ -234,11 +234,37 @@ const doBackfillLeagues = async () => {
   console.log(creation);
 };
 
+const doBackfillSeasons = async () => {
+  const data = await getLeagues();
+  const leagues = await prisma.league.findMany();
+
+  const seasons = data.response
+    .map((l: any) => {
+      const leagueId = leagues.find(
+        (le) => le.apiFootballId === l.league.id
+      )?.id;
+
+      const seasonsFromLeaguesApi = l.seasons.map((season: any) => ({
+        year: season.year,
+        start: season.start,
+        end: season.end,
+        leagueId,
+      }));
+
+      return seasonsFromLeaguesApi;
+    })
+    .flat();
+
+  const creation = await prisma.season.createMany({ data: seasons });
+
+  console.log(creation);
+};
+
 const doBackfillStandings = async (
   apiFootballLeagueId: number,
   seasonYear: number
 ) => {
-  const data = await getStandings(seasonYear);
+  const data = await getStandings(apiFootballLeagueId, seasonYear);
   const teams = await prisma.team.findMany();
   const league = await prisma.league.findFirst({
     where: { apiFootballId: apiFootballLeagueId },
@@ -257,7 +283,6 @@ const doBackfillStandings = async (
 
       return {
         rank: x.rank,
-        teamId,
         points: x.points,
         goalsDiff: x.goalsDiff,
         playedHome: x.home.played,
@@ -273,6 +298,8 @@ const doBackfillStandings = async (
         goalsForAway: x.away.goals.for,
         goalsAgainstAway: x.away.goals.against,
         update: x.update,
+        teamId,
+        leagueId,
         seasonId,
       };
     }
@@ -291,6 +318,7 @@ async function doBackfill() {
   await doBackfillCountries();
   await doBackfillVenues("england");
   await doBackfillLeagues();
+  await doBackfillSeasons();
 
   for (let i = startYear; i <= thisYear; i++) {
     await doBackfillTeams(apiFootballLeagueId, i);
