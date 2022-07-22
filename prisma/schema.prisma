@@ -132,6 +132,6 @@ model Season {
   end      String
   league   League     @relation(fields: [leagueId], references: [id])
   leagueId Int
-  standing Standing[]
+  Standing Standing[]
   Fixture  Fixture[]
 }

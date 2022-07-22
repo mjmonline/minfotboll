@@ -76,7 +76,12 @@ export const footballRouter = createRouter()
   .query("get-seasons", {
     async resolve() {
       const seasons = await prisma.season.findMany({
-        where: { league: { apiFootballId: 39 } },
+        where: {
+          league: { apiFootballId: 39 },
+          Standing: {
+            some: {},
+          },
+        },
         orderBy: [{ year: "asc" }],
       });
 
