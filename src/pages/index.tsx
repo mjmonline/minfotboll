@@ -4,6 +4,7 @@ import Img from "next/image";
 import { useState } from "react";
 import {
   FormControl,
+  Box,
   InputLabel,
   MenuItem,
   Paper,
@@ -27,11 +28,19 @@ function getSeasonSpan(start: number, end: string) {
 
 const Home: NextPage = () => {
   const [season, setSeason] = useState(new Date().getFullYear());
-  const { data } = trpc.useQuery(["football.get-standings", season]);
-  const { data: seasonsData } = trpc.useQuery(["football.get-seasons"]);
+  const [league, setLeague] = useState(39);
+  const { data } = trpc.useQuery([
+    "football.get-standings",
+    { season, league },
+  ]);
+  const { data: seasonsData } = trpc.useQuery(["football.get-seasons", league]);
 
-  const handleChange = (e: SelectChangeEvent<number>) => {
+  const handleSeasonChange = (e: SelectChangeEvent<number>) => {
     setSeason(Number(e.target.value));
+  };
+
+  const handleLeagueChange = (e: SelectChangeEvent<number>) => {
+    setLeague(Number(e.target.value));
   };
 
   return (
@@ -42,33 +51,44 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="flex flex-col w-1/2 min-h-screen mx-auto">
-        <h1 className="font-extrabold text-center text-7xl">
-          Create <span className="text-blue-500">T3</span> App
-        </h1>
         <div className="w-fit">
           {data && seasonsData && (
             <>
-              <FormControl fullWidth>
-                <InputLabel id="demo-simple-select-label">Season</InputLabel>
-                <Select
-                  labelId="demo-simple-select-label"
-                  value={season}
-                  label="Season"
-                  onChange={handleChange}
-                >
-                  {seasonsData.map((season) => {
-                    const seasonSpan = getSeasonSpan(season.year, season.end);
-                    return (
-                      <MenuItem
-                        key={`season-${season.year}`}
-                        value={season.year}
-                      >
-                        {seasonSpan}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
+              <Box className="my-8">
+                <FormControl sx={{ minWidth: 200 }}>
+                  <InputLabel id="demo-simple-select-label">League</InputLabel>
+                  <Select
+                    labelId="demo-simple-select-label"
+                    value={league}
+                    label="League"
+                    onChange={handleLeagueChange}
+                  >
+                    <MenuItem value={39}>Premiere league</MenuItem>
+                    <MenuItem value={140}>La liga</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl sx={{ minWidth: 120 }}>
+                  <InputLabel id="demo-simple-select-label">Season</InputLabel>
+                  <Select
+                    labelId="demo-simple-select-label"
+                    value={season}
+                    label="Season"
+                    onChange={handleSeasonChange}
+                  >
+                    {seasonsData.map((season) => {
+                      const seasonSpan = getSeasonSpan(season.year, season.end);
+                      return (
+                        <MenuItem
+                          key={`season-${season.year}`}
+                          value={season.year}
+                        >
+                          {seasonSpan}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+              </Box>
               <TableContainer component={Paper}>
                 <Table sx={{ minWidth: 650 }} aria-label="simple table">
                   <TableHead>
@@ -85,6 +105,7 @@ const Home: NextPage = () => {
                       <TableCell align="right">
                         <b>Points</b>
                       </TableCell>
+                      <TableCell align="right">Form</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -125,6 +146,7 @@ const Home: NextPage = () => {
                         <TableCell align="right">
                           <b>{t.points}</b>
                         </TableCell>
+                        <TableCell align="right">{t.form}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

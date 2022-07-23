@@ -12,15 +12,26 @@ export const footballRouter = createRouter()
     },
   })
   .query("get-standings", {
-    input: z
-      .number({
-        required_error: "Season is required",
-        invalid_type_error: "Season must be a number",
-      })
-      .min(1990),
+    input: z.object({
+      league: z.number({
+        required_error: "League id is required",
+        invalid_type_error: "League id must be a number",
+      }),
+      season: z
+        .number({
+          required_error: "Season is required",
+          invalid_type_error: "Season must be a number",
+        })
+        .min(1990),
+    }),
     async resolve(req) {
       const standings = await prisma.standing.findMany({
-        where: { season: { year: req.input } },
+        where: {
+          season: {
+            year: req.input.season,
+            AND: [{ league: { apiFootballId: req.input.league } }],
+          },
+        },
         orderBy: [{ rank: "asc" }],
       });
       const teams = await prisma.team.findMany();
@@ -35,13 +46,20 @@ export const footballRouter = createRouter()
             logo: team?.logo,
           },
           all: {
-            played: s.playedHome + s.playedAway,
-            win: s.winHome + s.winAway,
-            draw: s.drawHome + s.drawAway,
-            lose: s.loseHome + s.loseAway,
+            played:
+              s.playedHome && s.playedAway ? s.playedHome + s.playedAway : 0,
+            win: s.winHome && s.winAway ? s.winHome + s.winAway : 0,
+            draw: s.drawHome && s.drawAway ? s.drawHome + s.drawAway : 0,
+            lose: s.loseHome && s.loseAway ? s.loseHome + s.loseAway : 0,
             goals: {
-              for: s.goalsForHome + s.goalsForAway,
-              against: s.goalsAgainstHome + s.goalsAgainstAway,
+              for:
+                s.goalsForHome && s.goalsForAway
+                  ? s.goalsForHome + s.goalsForAway
+                  : 0,
+              against:
+                s.goalsAgainstHome && s.goalsAgainstAway
+                  ? s.goalsAgainstHome + s.goalsAgainstAway
+                  : 0,
             },
           },
           home: {
@@ -65,6 +83,7 @@ export const footballRouter = createRouter()
             },
           },
           points: s.points,
+          form: s.form,
           goalsDiff: s.goalsDiff,
           update: s.update,
         };
@@ -74,10 +93,14 @@ export const footballRouter = createRouter()
     },
   })
   .query("get-seasons", {
-    async resolve() {
+    input: z.number({
+      required_error: "League id is required",
+      invalid_type_error: "League id must be a number",
+    }),
+    async resolve(req) {
       const seasons = await prisma.season.findMany({
         where: {
-          league: { apiFootballId: 39 },
+          league: { apiFootballId: req.input },
           Standing: {
             some: {},
           },

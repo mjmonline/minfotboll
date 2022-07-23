@@ -284,6 +284,7 @@ const doBackfillStandings = async (
       return {
         rank: x.rank,
         points: x.points,
+        form: x.form,
         goalsDiff: x.goalsDiff,
         playedHome: x.home.played,
         winHome: x.home.win,
@@ -310,20 +311,28 @@ const doBackfillStandings = async (
   console.log(creation);
 };
 
+const apiFootballLeagueIds = {
+  premireLeague: 39,
+  laLiga: 140,
+  serieA: 135,
+  ligue1: 61,
+  allsvenskan: 113,
+};
+
 async function doBackfill() {
-  const apiFootballLeagueId = 39;
   const thisYear = new Date().getFullYear();
-  const startYear = thisYear - 1;
+  const startYear = thisYear - 2;
+  const endYear = thisYear - 1;
 
-  await doBackfillCountries();
-  await doBackfillVenues("england");
-  await doBackfillLeagues();
-  await doBackfillSeasons();
+  // await doBackfillCountries();
+  // await doBackfillVenues("england");
+  // await doBackfillLeagues();
+  // await doBackfillSeasons();
 
-  for (let i = startYear; i <= thisYear; i++) {
-    await doBackfillTeams(apiFootballLeagueId, i);
-    await doBackfillFixtures(apiFootballLeagueId, i);
-    await doBackfillStandings(apiFootballLeagueId, i);
+  for (let i = startYear; i <= endYear; i++) {
+    await doBackfillTeams(apiFootballLeagueIds.premireLeague, i);
+    await doBackfillFixtures(apiFootballLeagueIds.premireLeague, i);
+    await doBackfillStandings(apiFootballLeagueIds.premireLeague, i);
   }
 }
 

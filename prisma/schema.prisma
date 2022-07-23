@@ -15,7 +15,7 @@ datasource db {
 model Venue {
   id            Int       @id @default(autoincrement())
   apiFootballId Int
-  name          String
+  name          String?
   address       String?
   city          String?
   capacity      Int
@@ -105,19 +105,20 @@ model Standing {
   team             Team     @relation(fields: [teamId], references: [id])
   teamId           Int
   points           Int
+  form             String?
   goalsDiff        Int
-  playedHome       Int
-  winHome          Int
-  drawHome         Int
-  loseHome         Int
-  goalsForHome     Int
-  goalsAgainstHome Int
-  playedAway       Int
-  winAway          Int
-  drawAway         Int
-  loseAway         Int
-  goalsForAway     Int
-  goalsAgainstAway Int
+  playedHome       Int?
+  winHome          Int?
+  drawHome         Int?
+  loseHome         Int?
+  goalsForHome     Int?
+  goalsAgainstHome Int?
+  playedAway       Int?
+  winAway          Int?
+  drawAway         Int?
+  loseAway         Int?
+  goalsForAway     Int?
+  goalsAgainstAway Int?
   update           DateTime
   league           League   @relation(fields: [leagueId], references: [id])
   leagueId         Int
