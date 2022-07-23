@@ -28,8 +28,8 @@ export const footballRouter = createRouter()
       const standings = await prisma.standing.findMany({
         where: {
           season: {
-            year: req.input.season,
-            AND: [{ league: { apiFootballId: req.input.league } }],
+            league: { apiFootballId: req.input.league },
+            AND: [{ year: req.input.season }],
           },
         },
         orderBy: [{ rank: "asc" }],

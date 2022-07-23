@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   FormControl,
   Box,
+  Avatar,
   InputLabel,
   MenuItem,
   Paper,
@@ -16,7 +17,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Stack,
+  Typography,
 } from "@mui/material";
+import { green, red, grey } from "@mui/material/colors";
 
 import { trpc } from "../utils/trpc";
 
@@ -25,6 +29,28 @@ function getSeasonSpan(start: number, end: string) {
 
   return `${start}/${endYear}`;
 }
+
+const MatchFormItem: React.FC<{ outcome: string }> = ({ outcome }) => {
+  let bgcolor = "";
+  switch (outcome) {
+    case "W":
+      bgcolor = green[400];
+      break;
+    case "D":
+      bgcolor = grey[400];
+      break;
+    case "L":
+      bgcolor = red[400];
+      break;
+  }
+  return (
+    <Avatar sx={{ bgcolor, width: 24, height: 24 }}>
+      <Typography variant="caption" component="span">
+        {outcome}
+      </Typography>
+    </Avatar>
+  );
+};
 
 const Home: NextPage = () => {
   const [season, setSeason] = useState(new Date().getFullYear());
@@ -42,6 +68,8 @@ const Home: NextPage = () => {
   const handleLeagueChange = (e: SelectChangeEvent<number>) => {
     setLeague(Number(e.target.value));
   };
+
+  // TODO: we have double standings in the DB. league:39 && season:2021
 
   return (
     <>
@@ -146,7 +174,16 @@ const Home: NextPage = () => {
                         <TableCell align="right">
                           <b>{t.points}</b>
                         </TableCell>
-                        <TableCell align="right">{t.form}</TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row">
+                            {t.form?.split("").map((outcome) => (
+                              <MatchFormItem
+                                key={`outcome-${t.team.name}-${season}-${outcome}`}
+                                outcome={outcome}
+                              />
+                            ))}
+                          </Stack>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
