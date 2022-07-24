@@ -37,6 +37,8 @@ model Team {
   countryName   String
   league        League     @relation(fields: [leagueId], references: [id])
   leagueId      Int
+  season        Season     @relation(fields: [seasonId], references: [id])
+  seasonId      Int
   venue         Venue?     @relation(fields: [venueId], references: [id])
   venueId       Int?
   HomeFixture   Fixture[]  @relation("Home")
@@ -135,4 +137,5 @@ model Season {
   leagueId Int
   Standing Standing[]
   Fixture  Fixture[]
+  Team     Team[]
 }
