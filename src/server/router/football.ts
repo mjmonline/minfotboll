@@ -105,7 +105,21 @@ export const footballRouter = createRouter()
             some: {},
           },
         },
-        orderBy: [{ year: "asc" }],
+        orderBy: [{ year: "desc" }],
+      });
+
+      return seasons;
+    },
+  })
+  .query("get-leagues", {
+    async resolve() {
+      const seasons = await prisma.league.findMany({
+        where: {
+          Standing: {
+            some: {},
+          },
+        },
+        orderBy: [{ name: "asc" }],
       });
 
       return seasons;
