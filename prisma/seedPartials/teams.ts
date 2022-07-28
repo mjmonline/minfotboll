@@ -31,7 +31,7 @@ export async function doBackfillTeams(
   });
   const seasonId = season?.id;
   const dbRecords = await prisma.team.findMany({
-    where: { leagueId, seasonId },
+    where: { leagueId },
   });
 
   const teams = data.response.map((t: any) => {

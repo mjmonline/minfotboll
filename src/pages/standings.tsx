@@ -70,8 +70,6 @@ const Standings: NextPage = () => {
     setLeague(Number(e.target.value));
   };
 
-  // TODO: we have double standings in the DB. league:39 && season:2021
-
   return (
     <>
       <Head>

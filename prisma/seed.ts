@@ -20,28 +20,32 @@ export const apiFootballConfig = env.API_FOOTBALL_TOKEN
     }
   : {};
 
-const apiFootballLeagueIds = {
-  premireLeague: 39,
-  laLiga: 140,
-  serieA: 135,
-  ligue1: 61,
-  allsvenskan: 113,
-};
+const apiFootballLeagues = [
+  { id: 39, country: "england" },
+  { id: 140, country: "spain" },
+  { id: 135, country: "italy" },
+  { id: 61, country: "france" },
+  // { id: 113, country: "sweden" },
+];
 
 async function doBackfill() {
   const thisYear = new Date().getFullYear();
   const startYear = thisYear - 1;
   const endYear = thisYear;
+  let firstRun = true;
 
-  // await doBackfillCountries();
-  await doBackfillVenues("spain");
-  // await doBackfillLeagues();
-  // await doBackfillSeasons();
+  for (const league of apiFootballLeagues) {
+    firstRun && (await doBackfillCountries());
+    await doBackfillVenues(league.country);
+    firstRun && (await doBackfillLeagues());
+    firstRun && (await doBackfillSeasons());
 
-  for (let i = startYear; i <= endYear; i++) {
-    await doBackfillTeams(apiFootballLeagueIds.laLiga, i);
-    await doBackfillFixtures(apiFootballLeagueIds.laLiga, i);
-    await doBackfillStandings(apiFootballLeagueIds.laLiga, i);
+    for (let i = startYear; i <= endYear; i++) {
+      await doBackfillTeams(league.id, i);
+      await doBackfillFixtures(league.id, i);
+      await doBackfillStandings(league.id, i);
+    }
+    firstRun = false;
   }
 }
 

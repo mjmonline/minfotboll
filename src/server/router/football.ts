@@ -3,6 +3,18 @@ import { z } from "zod";
 
 import { createRouter } from "./context";
 
+function getWinner(goalsHome: number | null, goalsAway: number | null) {
+  if (goalsHome && goalsAway) {
+    if (goalsHome > goalsAway) {
+      return "home";
+    } else {
+      return "away";
+    }
+  }
+
+  return null;
+}
+
 export const footballRouter = createRouter()
   .query("get-teams", {
     async resolve() {
@@ -28,13 +40,18 @@ export const footballRouter = createRouter()
       const standings = await prisma.standing.findMany({
         where: {
           season: {
+            year: req.input.season,
             league: { apiFootballId: req.input.league },
-            AND: [{ year: req.input.season }],
           },
         },
         orderBy: [{ rank: "asc" }],
       });
-      const teams = await prisma.team.findMany();
+      const teams = await prisma.team.findMany({
+        where: {
+          season: { year: req.input.season },
+          league: { apiFootballId: req.input.league },
+        },
+      });
 
       const formattedStandings = standings.map((s) => {
         const team = teams.find((t) => t.id === s.teamId);
@@ -123,5 +140,111 @@ export const footballRouter = createRouter()
       });
 
       return seasons;
+    },
+  })
+  .query("get-fixtures", {
+    input: z.object({
+      league: z
+        .number({
+          invalid_type_error: "League id must be a number",
+        })
+        .optional(),
+      season: z.number({
+        required_error: "Season year is required",
+        invalid_type_error: "Season year must be a number",
+      }),
+    }),
+    async resolve(req) {
+      console.dir(req.input);
+      const fixtures = await prisma.fixture.findMany({
+        where: {
+          season: { year: req.input.season },
+          league: { apiFootballId: req.input.league },
+          // NOT: [{ statusShort: "FT" }],
+        },
+        orderBy: [{ timestamp: "asc" }],
+      });
+      const teamIds = fixtures.map((f) => [f.homeTeamId, f.awayTeamId]).flat();
+      const venueIds = fixtures
+        .map((f) => f.venueId)
+        .filter(Number) as number[];
+      const teams = await prisma.team.findMany({
+        where: {
+          id: { in: teamIds },
+        },
+      });
+      const venues = await prisma.venue.findMany({
+        where: {
+          id: { in: venueIds! },
+        },
+      });
+
+      const formattedFixtures = fixtures.map((f) => {
+        const homeTeam = teams.find((t) => t.id === f.homeTeamId);
+        const awayTeam = teams.find((t) => t.id === f.awayTeamId);
+        const winner = getWinner(f.goalsHome, f.goalsAway);
+        const venue = venues.find((v) => v.id === f.venueId);
+
+        return {
+          fixture: {
+            id: f.id,
+            referee: f.referee,
+            timezone: f.timezone,
+            timestamp: f.timestamp,
+            periods: {
+              first: f.firstPeriod,
+              second: f.secondPeriod,
+            },
+            venue: {
+              id: venue?.id,
+              name: venue?.name,
+              city: venue?.city,
+            },
+            status: {
+              long: f.statusLong,
+              short: f.statusShort,
+              elapsed: f.elapsedTime,
+            },
+          },
+          teams: {
+            home: {
+              id: homeTeam?.id,
+              name: homeTeam?.name,
+              logo: homeTeam?.logo,
+              winner: winner === null ? null : winner === "home",
+            },
+            away: {
+              id: awayTeam?.id,
+              name: awayTeam?.name,
+              logo: awayTeam?.logo,
+              winner: winner === null ? null : winner === "away",
+            },
+          },
+          goals: {
+            home: f.goalsHome,
+            away: f.goalsAway,
+          },
+          score: {
+            halftime: {
+              home: f.scoreHalfTimeHome,
+              away: f.scoreHalfTimeAway,
+            },
+            fulltime: {
+              home: f.scoreFullTimeHome,
+              away: f.scoreFullTimeAway,
+            },
+            extratime: {
+              home: f.scoreExtraTimeHome,
+              away: f.scoreExtraTimeAway,
+            },
+            penalty: {
+              home: f.scorePenaltyHome,
+              away: f.scorePenaltyAway,
+            },
+          },
+        };
+      });
+
+      return formattedFixtures;
     },
   });
